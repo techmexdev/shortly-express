@@ -10,6 +10,7 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var session = require('express-session');
 
 var app = express();
 
@@ -21,29 +22,78 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  secret: 'hello',
+  resave: null,
+  saveUninitialized: null,
+}));
 
-
-app.get('/', 
+app.get('/', restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+
+app.get('/links', restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
 
+app.post('/post', function(request, response) {
+  var username = request.body.username;
+  var password = request.body.password;
+  console.log('username / password', username, password);
+});
+
+app.post('/login', function(request, response) {
+  db.knex('users').where('username', request.body.username).select('*').then(res => {
+    console.log('RESasdfsadff', res);
+    if (request.body.password === res[0].password) {
+      request.session.name = res[0].username;
+    }
+  });
+  response.redirect('/links');
+  console.log('YEAH ALL THE PHOLLIPS', 334/8)
+  response.end();
+});
+
+app.post('/signup', function(request, response) {
+  new User({
+    'username': request.body.username,
+    'password': request.body.password
+  }).save().then(function() {
+    var options = {
+      'method': 'GET',
+      'followAllRedirects': true,
+      'uri': 'http://127.0.0.1:4568/login',
+      'json': {
+        'username': request.body.username,
+        'password': request.body.password
+      }
+    };
+  });
+  request.session.name = request.body.username;
+  response.redirect('/');
+  response.end();
+});
+
 app.post('/links', 
 function(req, res) {
   var uri = req.body.url;
-
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
     return res.sendStatus(404);
@@ -75,7 +125,15 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-
+function restrict(req, res, next) {
+ // console.log('------------ session name: ', req.session.name);
+  if (req.session.name) {
+    next();
+  } else {
+    //req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+}
 
 
 /************************************************************/

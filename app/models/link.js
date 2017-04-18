@@ -2,6 +2,7 @@ var db = require('../config');
 var Click = require('./click');
 var crypto = require('crypto');
 var UserLink = require('./user_link');
+var User = require('./user');
 
 var Link = db.Model.extend({
   tableName: 'urls',
@@ -10,7 +11,7 @@ var Link = db.Model.extend({
     visits: 0
   },
   userLink: function() {
-    return this.belongsTo(UserLink, 'link_id');
+    return this.belongsToMany(User).through(UserLink);
   },
   clicks: function() {
     return this.hasMany(Click);

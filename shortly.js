@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var Crypto = require('crypto-js');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -48,7 +48,7 @@ app.get('/signup', function(req, res) {
 
 app.get('/links', restrict,
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
+  Links.fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
@@ -65,7 +65,7 @@ app.post('/login', function(request, response) {
           .then((model) => {
             if (model === null) {
               response.redirect('/login');
-            } else if (request.body.password === model.attributes['password']) {
+            } else if ((request.body.password) === model.attributes['password']) {
               request.session.name = request.body.username;
               response.redirect('/');
             }
@@ -73,17 +73,18 @@ app.post('/login', function(request, response) {
 });
 
 app.post('/signup', function(request, response) {
+  console.log(Crypto.SHA3(request.body.password));
   new User({
     'username': request.body.username,
-    'password': request.body.password
-  }).save().then(function() {
+    'password': request.body.password//Crypto.SHA3(request.body.password)
+  }).save().then(function(msg) {
     var options = {
-      'method': 'GET',
+      'method': 'POST',
       'followAllRedirects': true,
       'uri': 'http://127.0.0.1:4568/login',
       'json': {
         'username': request.body.username,
-        'password': request.body.password
+        'password': request.body.password//Crypto.SHA3(request.body.password)
       }
     };
   });

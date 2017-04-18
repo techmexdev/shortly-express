@@ -10,10 +10,10 @@ var UserLink = db.Model.extend({
     visits: 0
   },
   user: function() {
-    return this.hasMany(User);
+    return this.belongsTo(User);
   },
   link: function() {
-    return this.hasMany(Link);
+    return this.belongsTo(Link);
   }
 });
 

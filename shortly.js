@@ -60,15 +60,16 @@ app.post('/post', function(request, response) {
 });
 
 app.post('/login', function(request, response) {
-  db.knex('users').where('username', request.body.username).select('*').then(res => {
-    console.log('RESasdfsadff', res);
-    if (request.body.password === res[0].password) {
-      request.session.name = res[0].username;
-    }
-  });
-  response.redirect('/links');
-  console.log('YEAH ALL THE PHOLLIPS', 334/8)
-  response.end();
+  new User({'username': request.body.username})
+          .fetch()
+          .then((model) => {
+            if (model === null) {
+              response.redirect('/login');
+            } else if (request.body.password === model.attributes['password']) {
+              request.session.name = request.body.username;
+              response.redirect('/');
+            }
+          }).then(response.end);
 });
 
 app.post('/signup', function(request, response) {
